@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 
 module Node where 
 
@@ -10,10 +11,20 @@ import Data.Word
 import Data.Bits
 
 data Node = Node { nodeId :: BS.ByteString }
+     deriving (Eq, Ord)
 
-data RatedNode = Good Node
-               | Bad Node
-               | Questionable Node
+data RatedNode a = Good Node
+                 | Bad Node
+                 | Questionable Node
+
+-- if you decide to make RatedNode more general
+--instance Applicative RatedItem where
+--    (Good f) <*> n         = fmap f n
+--    (Bad f) <*> n          = fmap f n 
+--    (Questionable f) <*> n = fmap f n 
+--
+--    -- Just use Good for pure
+--    pure a = Good a
 
 -- Generates a node with a new ByteString given a random number generator
 genNode :: RandomGen g => g -> Node
@@ -31,3 +42,7 @@ nodeDistance n1 n2 = compareHashes (nodeId n1) (nodeId n2)
 -- Distance between a node and an arbitrary hash
 nodeHashCmp :: Node -> BS.ByteString -> BS.ByteString
 nodeHashCmp n h = compareHashes (nodeId n) h
+
+-- Generates a new node using the System RNG
+newNode :: IO Node
+newNode = genNode <$> getStdGen
