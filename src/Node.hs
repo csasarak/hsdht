@@ -10,18 +10,19 @@ import Data.Bits
 data Node = Node { nodeId :: Integer }
      deriving (Eq, Ord)
 
-data RatedNode = Good Node
-                 | Bad Node
-                 | Questionable Node
+data RatedItem a = Good a
+                 | Bad a
+                 | Questionable a
+                 deriving (Functor)
 
 -- if you decide to make RatedNode more general
---instance Applicative RatedItem where
---    (Good f) <*> n         = fmap f n
---    (Bad f) <*> n          = fmap f n 
---    (Questionable f) <*> n = fmap f n 
---
---    -- Just use Good for pure
---    pure a = Good a
+instance Applicative RatedItem where
+    (Good f) <*> n         = fmap f n
+    (Bad f) <*> n          = fmap f n 
+    (Questionable f) <*> n = fmap f n 
+
+    -- Just use Good for pure
+    pure a = Good a
 
 -- Generates a node with a new ByteString given a random number generator
 genNode :: RandomGen g => g -> Node
