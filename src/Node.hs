@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 
+-- Will need to lock this down a bit
 module Node where 
 
 import Control.Applicative
@@ -22,7 +23,12 @@ instance Applicative RatedItem where
     (Questionable f) <*> n = fmap f n 
 
     -- Just use Good for pure
-    pure a = Good a
+    pure = Good 
+
+extractRatedItem :: RatedItem a -> a
+extractRatedItem (Good         bs) = bs
+extractRatedItem (Bad          bs) = bs
+extractRatedItem (Questionable bs) = bs
 
 -- Generates a node with a new ByteString given a random number generator
 genNode :: RandomGen g => g -> Node
