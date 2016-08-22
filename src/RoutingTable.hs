@@ -6,6 +6,7 @@ module RoutingTable ( newRoutingTable,
 import qualified Data.ByteString as BS
 import Control.Applicative
 import Node
+import qualified Util 
 import Data.List
 
 maxBucketNodes :: Int
@@ -46,6 +47,11 @@ ratedNodeBelongs b = (nodeBelongs b) . extractRatedItem
 bucketIsFull :: Bucket -> Bool
 bucketIsFull = (< maxBucketNodes) . getSize 
 
+allGood :: [RatedItem Node] -> Bool
+allGood = all pred 
+          where pred (Good _) = True
+                pred otherwise = False
+
 -- This function will either:
 -- 1. Add node to a bucket
 --    Might need to split into multiple buckets, or replace a bad node
@@ -55,14 +61,17 @@ addNodeToBucket :: RatedItem Node -> Bucket -> [Bucket]
 addNodeToBucket n b@(Bucket lim@(l, h) rn s)
     -- node doesn't belong
     | not $ ratedNodeBelongs b n = [b] 
-    -- node belongs 
+    -- node belongs, bucket isn't full 
     | not $ bucketIsFull b = [Bucket lim (n:rn) (s + 1)] 
-    -- node belongs but doesn't fit
-    | otherwise = concatMap (addNodeToBucket n) (splitBucket b) 
+    -- node belongs doesn't fit, all nodes are good
+    | allGood rn = concatMap (addNodeToBucket n) (splitBucket b) 
+    -- node belongs, doesn't fit, some nodes not good
+    | otherwise = addNodeToBucket n smallerBucket 
         where h1 = h `div` 2 
               l2 = h1
               l1 = l
               h2 = h
+              smallerBucket = Bucket lim (Util.removeElem Node.isBad rn) (s - 1)
 
 -- splits a bucket in half evenly generates two 
 splitBucket :: Bucket -> [Bucket]

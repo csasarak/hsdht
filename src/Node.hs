@@ -25,6 +25,18 @@ instance Applicative RatedItem where
     -- Just use Good for pure
     pure = Good 
 
+isGood :: RatedItem a -> Bool
+isGood (Good _) = True
+isGood otherwise = False
+
+isBad :: RatedItem a -> Bool
+isBad (Bad _) = True
+isBad otherwise = False
+
+-- Anything that isn't a Good node
+isStale :: RatedItem a -> Bool
+isStale = not . isGood
+
 extractRatedItem :: RatedItem a -> a
 extractRatedItem (Good         bs) = bs
 extractRatedItem (Bad          bs) = bs
