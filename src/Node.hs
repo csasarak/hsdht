@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- Will need to lock this down a bit
 module Node where 
@@ -8,43 +9,33 @@ import System.Random
 import Data.Word
 import Data.Bits
 
-data Node = Node { nodeId :: Integer }
-     deriving (Eq, Ord)
+data Node = Node { nodeId :: Integer,
+                   nodeStatus :: NodeRating }
+     deriving (Eq)
 
-data RatedItem a = Good a
-                 | Bad a
-                 | Questionable a
-                 deriving (Functor)
+instance Ord Node where 
+    a <= b = (nodeId a) <= (nodeId b)
 
--- if you decide to make RatedNode more general
-instance Applicative RatedItem where
-    (Good f) <*> n         = fmap f n
-    (Bad f) <*> n          = fmap f n 
-    (Questionable f) <*> n = fmap f n 
+data NodeRating = Good 
+                | Bad 
+                | Questionable 
+     deriving (Eq, Show)
 
-    -- Just use Good for pure
-    pure = Good 
-
-isGood :: RatedItem a -> Bool
-isGood (Good _) = True
+isGood :: Node -> Bool
+isGood (nodeStatus -> Good) = True
 isGood otherwise = False
 
-isBad :: RatedItem a -> Bool
-isBad (Bad _) = True
+isBad :: Node -> Bool
+isBad (nodeStatus -> Bad) = True
 isBad otherwise = False
 
--- Anything that isn't a Good node
-isStale :: RatedItem a -> Bool
-isStale = not . isGood
-
-extractRatedItem :: RatedItem a -> a
-extractRatedItem (Good         bs) = bs
-extractRatedItem (Bad          bs) = bs
-extractRatedItem (Questionable bs) = bs
+isQuestionable :: Node -> Bool
+isQuestionable (nodeStatus -> Questionable) = True
+isQuestionable otherwise = False
 
 -- Generates a node with a new ByteString given a random number generator
 genNode :: RandomGen g => g -> Node
-genNode gen = Node id
+genNode gen = Node id Good
               where id = wordListToInteger . take 20 . randoms $ gen 
 
 -- Base hash compare function, 
