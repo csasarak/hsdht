@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-|
   Module      : Bencode 
   Description : Implementation of Bencoding for bittorrent as described at http://www.bittorrent.org/beps/bep_0003.html
@@ -18,10 +19,10 @@ import qualified Text.Parsec.Error as PE
 import Data.Char
 import qualified Data.Map as M
 import qualified Control.Monad as Mon
-import qualified Control.Applicative as CA
+import qualified Control.Applicative 
 
 -- | A map from Bencode data to Bencode data
-type BMapT = M.Map Bencode Bencode
+type BMap = M.Map Bencode Bencode
 
 data Bencode =  -- |Constructor for a Bencoded Integer
                 Bint Integer
@@ -30,18 +31,18 @@ data Bencode =  -- |Constructor for a Bencoded Integer
                 -- |Constructor for a list of Bencoded items
               | Blist [Bencode]
                 -- |Constructor for a Bencoded Map (dictionary)
-              | Bmap BMapT
+              | Bdict BMap
               deriving (Eq, Ord)
 
 instance Show Bencode where
     show (Bint i) = "i" ++ show i ++ "e"
     show (Bstr s) = (show . length) s ++ ":" ++ s
     show (Blist bs) = 'l':concatMap show bs ++ "e"
-    show (Bmap bm) = M.foldlWithKey (\a k b -> a ++ show k ++ show b) "d" bm  ++ "e"
+    show (Bdict bm) = M.foldlWithKey (\a k b -> a ++ show k ++ show b) "d" bm  ++ "e"
 
 -- |Parser for a Bencoded Integer
 bInt :: Parser Bencode
-bInt = Bint CA.<$> (char 'i' CA.*> validNum CA.<* char 'e' )
+bInt = Bint <$> (char 'i' *> validNum <* char 'e' )
        -- This parser parses valid integers in Bencodings 
        where validNum = do neg <- option ' ' (char '-')
                            d <- digit
@@ -73,7 +74,7 @@ bMap :: Parser Bencode
 bMap = do char 'd'
           entries <- many dictEntry
           char 'e'
-          return $ Bmap $ M.fromList entries
+          return $ Bdict $ M.fromList entries
 
 -- |Parser for a key-value pair
 dictEntry :: Parser (Bencode, Bencode)
