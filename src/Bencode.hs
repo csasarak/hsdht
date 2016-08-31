@@ -40,6 +40,12 @@ instance Show Bencode where
     show (Blist bs) = 'l':concatMap show bs ++ "e"
     show (Bdict bm) = M.foldlWithKey (\a k b -> a ++ show k ++ show b) "d" bm  ++ "e"
 
+class Bencodable a where
+    toBencoding :: a -> Bencode
+
+class Bdecodable a where
+    fromBencoding :: Bencode -> a
+
 -- |Parser for a Bencoded Integer
 bInt :: Parser Bencode
 bInt = Bint <$> (char 'i' *> validNum <* char 'e' )

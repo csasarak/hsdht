@@ -4,6 +4,7 @@
 -- Will need to lock this down a bit
 module Node where 
 
+import Bencode
 import Control.Applicative
 import System.Random
 import Data.Word
@@ -15,6 +16,9 @@ data Node = Node { nodeId :: Integer,
 
 instance Ord Node where 
     a <= b = (nodeId a) <= (nodeId b)
+
+instance Bencodable Node where
+    toBencoding (nodeId -> i) = Bint i
 
 data NodeRating = Good 
                 | Bad 
