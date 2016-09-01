@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-|
   Module      : Bencode 
   Description : Implementation of Bencoding for bittorrent as described at http://www.bittorrent.org/beps/bep_0003.html
@@ -24,6 +25,7 @@ import qualified Control.Applicative
 -- | A map from Bencode data to Bencode data
 type BMap = M.Map Bencode Bencode
 
+-- maybe hide this and use the Bencodable instances?
 data Bencode =  -- |Constructor for a Bencoded Integer
                 Bint Integer
                 -- |Constructor for a Bencoded String
@@ -45,6 +47,15 @@ class Bencodable a where
 
 class Bdecodable a where
     fromBencoding :: Bencode -> a
+
+instance Bencodable String where
+    toBencoding s = Bstr s
+
+instance Bencodable Integer where
+    toBencoding i = Bint i
+
+instance Bencodable [Bencode] where
+    toBencoding l = Blist l
 
 -- |Parser for a Bencoded Integer
 bInt :: Parser Bencode

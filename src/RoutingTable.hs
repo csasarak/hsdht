@@ -1,6 +1,7 @@
 
-module RoutingTable ( newRoutingTable,
-                     getLimits) 
+module RoutingTable (  newRoutingTable
+                     , getLimits 
+                     , RoutingTable)
                      where 
 
 import qualified Data.ByteString as BS

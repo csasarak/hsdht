@@ -21,6 +21,8 @@ library
                        , random
                        , parsec
                        , containers
+                       , network
+                       , mtl
                        , base16-bytestring
   default-language:    Haskell2010
 

@@ -10,7 +10,9 @@ import System.Random
 import Data.Word
 import Data.Bits
 
-data Node = Node { nodeId :: Integer,
+type NodeId = Integer
+
+data Node = Node { nodeId :: NodeId,
                    nodeStatus :: NodeRating }
      deriving (Eq)
 
