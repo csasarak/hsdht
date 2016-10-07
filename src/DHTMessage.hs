@@ -6,7 +6,7 @@ import Data.Maybe
 import Bencode
 import Node
 
-type TransactionId = Integer
+type TransactionId = String
 type InfoHash = Integer
 type Port = Int
 
