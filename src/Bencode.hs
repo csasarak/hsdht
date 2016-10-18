@@ -40,7 +40,7 @@ instance Show Bencode where
     show (Bint i) = "i" ++ show i ++ "e"
     show (Bstr s) = (show . length) s ++ ":" ++ s
     show (Blist bs) = 'l':concatMap show bs ++ "e"
-    show (Bdict bm) = M.foldlWithKey (\a k b -> a ++ show k ++ show b) "d" bm  ++ "e"
+    show (Bdict bm) = (foldl (\a (k, v) -> a ++ show k ++ show v) "d" . M.toAscList $ bm) ++ "e"
 
 class Bencodable a where
     toBencoding :: a -> Bencode
