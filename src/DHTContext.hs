@@ -18,12 +18,13 @@ import Control.Monad.State
 data DHTContext = forall g. RandomGen g => DHTContext { 
       localNode :: Node -- this node in the DHT
     , routingTable :: RoutingTable 
+    , nextTid :: TransactionIdI
     , contextRng :: g
     }
 
 -- | Will generate a new DHTContext with a fresh node id
 newDHTContext :: RandomGen g => g -> DHTContext
-newDHTContext rng = DHTContext (genNode rng1) newRoutingTable rng2
+newDHTContext rng = DHTContext (genNode rng1) newRoutingTable 00 rng2
                     where (rng1, rng2) = split rng -- split because I'm lazy
 
 
@@ -32,21 +33,21 @@ newDHTContext rng = DHTContext (genNode rng1) newRoutingTable rng2
 getRandomFromDHTContext :: (Integral a, Random a) => DHTContext -> (a, DHTContext)
 getRandomFromDHTContext DHTContext{..} = (n, newc)
                                          where (n, rng') = random contextRng
-                                               newc = DHTContext localNode routingTable rng' 
+                                               newc = DHTContext localNode routingTable nextTid rng' 
 
 initializeContext :: (RandomGen g) => g -> State DHTContext ()
 initializeContext g = do put $ newDHTContext g 
                          return ()
 
 getTransactionId :: State DHTContext String
-getTransactionId = do (tId, newContext) <- gets getRandomFromDHTContext
-                      put newContext
-                      let masked = tId .|. (0xFF :: Int)
-                      return $ showHex masked "" 
+getTransactionId = do dhtCon <- get 
+                      let tId = nextTid dhtCon
+                      let newId = (tId + 1) `mod` maxTransactionId
+                      put $ dhtCon { nextTid = newId }
+                      return $ showHex newId "" 
 
 -- | Given a QueryMethod, generate a new Query Message 
 newQuery :: QueryMethod -> State DHTContext DHTMessage
 newQuery qm = do tId <- getTransactionId
                  nId <- gets (nodeId . localNode)
-                 return $ DHTMessage {transactionId=tId, 
-                                      messageType = (Query qm nId) }
+                 return DHTMessage {transactionId=tId, messageType = Query qm nId }

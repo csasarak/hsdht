@@ -1,14 +1,19 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, RecordWildCards #-}
 module DHTMessage where
 
-import qualified Data.Map as M
-import Data.Maybe
+import Numeric (showHex)
 import Bencode
+import qualified Data.Map as M
 import Node
 
 type TransactionId = String
+type TransactionIdI = Int -- Integer form of TransactionId
 type InfoHash = Integer
 type Port = Int
+type ImpliedPort = Bool
+
+maxTransactionId :: Int
+maxTransactionId = 2^16
 
 -- |MessageType represents a type of DHT message along with any
 -- necessary parameters for that type of query
@@ -33,9 +38,12 @@ data DHTMessage = DHTMessage
                      messageType :: MessageType
                    }
 
---instance Bencodable DHTMessage where
---    toBencoding DHTMessage { queryingNode = nId, 
---                             messageType = mT, 
---                             contents = c } = undefined
---                           where nId' = toBencoding nId
---                                 mT' = toBencoding mT
+instance Bencodable DHTMessage where
+  toBencoding msg@DHTMessage{..} =
+    let msgBase = [(Bstr "t", Bstr transactionId)]
+        queryBase = (Bstr "y", Bstr $ show messageType):msgBase
+        pingQuery = (Bstr "q", Bstr "ping"):queryBase
+        queryArgDict nodeId = Bdict $ M.fromList [(Bstr "id", Bstr $ showHex nodeId "")]
+    in
+      case messageType of
+        (Query Ping nodeId) -> Bdict $ M.fromList $ (Bstr "a", queryArgDict nodeId):pingQuery
