@@ -4,6 +4,8 @@
 
 module DHTContext ( DHTContext(..)
                   , newDHTContext
+                  , initializeContext
+                  , newQuery
                   ) where
 
 import RoutingTable
@@ -35,9 +37,10 @@ getRandomFromDHTContext DHTContext{..} = (n, newc)
                                          where (n, rng') = random contextRng
                                                newc = DHTContext localNode routingTable nextTid rng' 
 
-initializeContext :: (RandomGen g) => g -> State DHTContext ()
-initializeContext g = do put $ newDHTContext g 
-                         return ()
+-- Computations with a DHTContext maintaining State
+
+initializeContext :: (Monad m, RandomGen g) => m g -> m DHTContext
+initializeContext = fmap newDHTContext
 
 getTransactionId :: State DHTContext String
 getTransactionId = do dhtCon <- get 
