@@ -22,10 +22,12 @@ import qualified Data.Map as M
 import qualified Control.Monad as Mon
 import qualified Control.Applicative 
 
+-- BUG: This type doesn't yet reject improper Bencoded values, e.g.
+-- BMap should only accept Bstrs as key values.
 -- | A map from Bencode data to Bencode data
 type BMap = M.Map Bencode Bencode
 
--- maybe hide this and use the Bencodable instances?
+-- | Type representing a Bencoded value
 data Bencode =  -- |Constructor for a Bencoded Integer
                 Bint Integer
                 -- |Constructor for a Bencoded String
