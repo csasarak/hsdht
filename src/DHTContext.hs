@@ -29,16 +29,17 @@ newDHTContext :: RandomGen g => g -> DHTContext
 newDHTContext rng = DHTContext (genNode rng1) newRoutingTable 00 rng2
                     where (rng1, rng2) = split rng -- split because I'm lazy
 
-
 -- | This is a helper for getting a random value out of a DHTContext
--- contextRng is a polymorphic variable, this function prevents it from escaping
-getRandomFromDHTContext :: (Integral a, Random a) => DHTContext -> (a, DHTContext)
-getRandomFromDHTContext DHTContext{..} = (n, newc)
-                                         where (n, rng') = random contextRng
-                                               newc = DHTContext localNode routingTable nextTid rng' 
-
--- Computations with a DHTContext maintaining State
-
+getRandomFromDHTContext :: (Integral a, Random a) => State DHTContext a -- Could I replace the rng with this action?
+getRandomFromDHTContext = do dhtC <- get
+                             case dhtC of
+                               DHTContext{..} -> let (v, rng') = random contextRng in
+                                                   do put DHTContext{localNode = localNode
+                                                                    , routingTable = routingTable
+                                                                    , nextTid = nextTid
+                                                                    , contextRng =  contextRng}
+                                                      return v
+                             
 initializeContext :: (Monad m, RandomGen g) => m g -> m DHTContext
 initializeContext = fmap newDHTContext
 
