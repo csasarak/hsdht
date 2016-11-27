@@ -6,11 +6,17 @@ module Node where
 
 import Bencode
 import Control.Applicative
+import Control.Monad.State
 import System.Random
 import Data.Word
 import Data.Bits
+import Util
 
 type NodeId = Integer
+
+-- Might want to put this in a config file or something
+nodeIdBytes :: Int
+nodeIdBytes = 20
 
 data Node = Node { nodeId :: NodeId,
                    nodeStatus :: NodeRating }
@@ -39,11 +45,13 @@ isQuestionable :: Node -> Bool
 isQuestionable (nodeStatus -> Questionable) = True
 isQuestionable otherwise = False
 
--- Generates a node with a new ByteString given a random number generator
-genNode :: RandomGen g => g -> Node
-genNode gen = Node id Good
-              where id = wordListToInteger . take 20 . randoms $ gen 
-
+-- |Generates a node with a new NodeId given a random number generator,
+-- also returns the advanced rng.
+genNode :: (RandomGen g) => g -> (Node, g)
+genNode gen = (Node id Good, gen')
+              where id = wordListToInteger . take (nodeIdBytes `div` 2) $ rs
+                    (rs, gen') = runState (replicateM nodeIdBytes statefulRng) $ gen
+                    
 -- Base hash compare function, 
 compareHashes :: Integer -> Integer -> Integer
 compareHashes i1 i2 = i1 `xor` i2
@@ -58,7 +66,5 @@ nodeHashCmp n h = compareHashes (nodeId n) h
 
 -- Generates a new node using the System RNG
 newNode :: IO Node
-newNode = genNode <$> getStdGen
+newNode = fst . genNode <$> getStdGen
 
-wordListToInteger :: [Word8] -> Integer
-wordListToInteger = foldl (\acc n -> (acc `shiftL` 8) .|. (toInteger n)) 0

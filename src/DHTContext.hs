@@ -8,13 +8,14 @@ module DHTContext ( DHTContext(..)
                   , newQuery
                   ) where
 
+import Data.Bits
+import System.Random
+import Control.Monad.State
+import Network.Socket
 import RoutingTable
 import Node
 import DHTMessage
 import Numeric
-import Data.Bits
-import System.Random
-import Control.Monad.State
 
 -- Might have to put an rng somewhere in here...
 data DHTContext = forall g. RandomGen g => DHTContext { 
@@ -26,8 +27,8 @@ data DHTContext = forall g. RandomGen g => DHTContext {
 
 -- | Will generate a new DHTContext with a fresh node id
 newDHTContext :: RandomGen g => g -> DHTContext
-newDHTContext rng = DHTContext (genNode rng1) newRoutingTable 00 rng2
-                    where (rng1, rng2) = split rng -- split because I'm lazy
+newDHTContext rng = DHTContext node newRoutingTable 00 rng'
+                    where (node, rng') = genNode rng
 
 -- | This is a helper for getting a random value out of a DHTContext
 getRandomFromDHTContext :: (Integral a, Random a) => State DHTContext a -- Could I replace the rng with this action?
