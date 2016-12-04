@@ -1,4 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-|
   Module      : DHTSocket 
   Description : Helper types/functions for interacting with a DHT
@@ -19,20 +20,42 @@
 -- let sockAddr = SockAddrInet 7900 address
 -- sendTo s "hello" sockAddr 
 
-module DHTSocket where
+module DHTSocket ( newUDPSocket
+                 , sendDHTMessage
+                 ) where
 
-import Network.Socket
+import Network.Socket hiding (send, sendTo, recv, recvFrom)
+import Network.Socket.ByteString
+import Data.ByteString.Char8 as BS
 import Control.Applicative
-import Control.Monad.Reader
-import qualified Data.Map as Map
 import Data.Char
 import System.Random
 import Node
 import RoutingTable
 import Bencode
 import DHTContext
+import DHTMessage
+
+-- CMS: May eventually need a type to hold and get some data from a context?
+
+-- | The maximum response size to accept from a Socket
+maxResponseSize :: Int
+maxResponseSize = 4096
 
 -- | Create a 'Socket' for sending messaged via UDP.
-udpSocket :: IO Socket
-udpSocket = socket AF_INET Datagram defaultProtocol
+newUDPSocket :: IO Socket
+newUDPSocket = socket AF_INET Datagram defaultProtocol
 
+-- | Sends a 'DHTMessage' via UDP using a 'Socket' to 'SockAddr'. 
+sendDHTMessage :: Socket -> SockAddr -> DHTMessage -> IO ()
+sendDHTMessage s addr dhtMsg = sendAllTo s dhtBS addr
+  where dhtBS = BS.pack . show . toBencoding $ dhtMsg
+
+-- CMS: My goal here is to eventually hide the UDP Socket pieces and have message emitter/receiver
+-- pairs and possibly do the validation/queuing of transactions in here. But more importantly,
+-- do the management of sending multiple messages and receiving multiple responses on a single socket
+-- without accidentally crossing the wires. 
+-- | Returns a pair of functions generating IO actions, one can be used to send
+-- a 'DHTMessage' on a particular UDP 'Socket' to a particular address. The other can be used to
+-- receive a DHTMessage on a particular UDP Socket from a particular address.
+--emissionsActions :: 

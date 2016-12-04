@@ -39,6 +39,9 @@ executable hsdht-exe
   build-depends:       base
                      , hsdht
                      , random
+                     , bytestring
+                     , network
+                     , mtl
   default-language:    Haskell2010
 
 test-suite hsdht-test
