@@ -44,10 +44,14 @@ instance Show Bencode where
     show (Blist bs) = 'l':concatMap show bs ++ "e"
     show (Bdict bm) = (foldl (\a (k, v) -> a ++ show k ++ show v) "d" . M.toAscList $ bm) ++ "e"
 
+-- | Class for things which can be represented as a 'Bencode'
 class Bencodable a where
+    -- | Convert an a to a Bencode
     toBencoding :: a -> Bencode
 
+-- | Inverse of 'Bencodable'
 class Bdecodable a where
+    -- | Convert an Bencode datum into an a
     fromBencoding :: Bencode -> a
 
 instance Bencodable String where

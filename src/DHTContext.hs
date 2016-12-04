@@ -18,10 +18,15 @@ import DHTMessage
 import Numeric
 
 -- Might have to put an rng somewhere in here...
-data DHTContext = forall g. RandomGen g => DHTContext { 
+data DHTContext =
+  forall g. RandomGen g => DHTContext { 
+      -- | Node data for this 'Node'
       localNode :: Node -- this node in the DHT
+       -- | This Node's 'RoutingTable'
     , routingTable :: RoutingTable 
+      -- | The 'TransactionIdI' which will be assigned for the next transaction.
     , nextTid :: TransactionIdI
+      -- | An a 'RandomGen' which can be used for generating data
     , contextRng :: g
     }
 
@@ -41,18 +46,23 @@ getRandomFromDHTContext = do dhtC <- get
                                                                     , contextRng =  contextRng}
                                                       return v
                              
+-- | Given an action which produces and instance of RandomGen, initialize a
+-- DHTContext from the RandomGen
 initializeContext :: (Monad m, RandomGen g) => m g -> m DHTContext
 initializeContext = fmap newDHTContext
 
-getTransactionId :: State DHTContext String
-getTransactionId = do dhtCon <- get 
-                      let tId = nextTid dhtCon
-                      let newId = (tId + 1) `mod` maxTransactionId
-                      put $ dhtCon { nextTid = newId }
-                      return $ showHex newId "" 
+
+-- | Given a DHTContext, get the next TransactionId and return as a String, updating
+-- the transaction counter as well. 
+getNextTransactionId :: State DHTContext String
+getNextTransactionId = do dhtCon <- get 
+                          let tId = nextTid dhtCon
+                          let newId = (tId + 1) `mod` maxTransactionId
+                          put $ dhtCon { nextTid = newId }
+                          return $ showHex newId "" 
 
 -- | Given a QueryMethod, generate a new Query Message 
 newQuery :: QueryMethod -> State DHTContext DHTMessage
-newQuery qm = do tId <- getTransactionId
+newQuery qm = do tId <- getNextTransactionId
                  nId <- gets (nodeId . localNode)
                  return DHTMessage {transactionId=tId, messageType = Query qm nId }

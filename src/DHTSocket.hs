@@ -32,7 +32,7 @@ import RoutingTable
 import Bencode
 import DHTContext
 
--- Return a Socket which can be used to communicate over UDP
+-- | Create a 'Socket' for sending messaged via UDP.
 udpSocket :: IO Socket
 udpSocket = socket AF_INET Datagram defaultProtocol
 
