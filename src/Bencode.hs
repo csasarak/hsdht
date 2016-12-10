@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-|
   Module      : Bencode 
   Description : Implementation of Bencoding for bittorrent as described at http://www.bittorrent.org/beps/bep_0003.html
@@ -12,15 +13,15 @@
 
 module Bencode where
 
-import Text.Parsec.Char
-import Text.Parsec.Prim
-import Text.ParserCombinators.Parsec.Prim
-import Text.Parsec.Combinator
+import Text.Parsec
+import Text.Parsec.ByteString
 import qualified Text.Parsec.Error as PE
 import Data.Char
+import qualified Data.ByteString.Char8 as BS
 import qualified Data.Map as M
 import qualified Control.Monad as Mon
-import qualified Control.Applicative 
+import qualified Control.Applicative
+
 
 -- BUG: This type doesn't yet reject improper Bencoded values, e.g.
 -- BMap should only accept Bstrs as key values.
@@ -80,30 +81,29 @@ bInt = Bint <$> (char 'i' *> validNum <* char 'e' )
        
 -- |Parser for a Bencoded String
 bString :: Parser Bencode
-bString = do ss <- many1 digit
-             char ':'
+bString = do ss <- (many1 digit <* char ':')
              let size = read ss
              Mon.liftM Bstr $ count size anyChar
              
 -- |Parser for a Bencoded list
 bList :: Parser Bencode
-bList = do char 'l' 
-           ls <- many (bInt <|> bString <|> bList <|> bMap)
-           char 'e'
-           return $ Blist ls
- 
+bList = Blist <$> p
+  where list_items = many (bInt <|> bString <|> bList <|> bMap)
+        p = char 'l' *> list_items <* char 'e'
+
 -- |Parser for a Bencoded dictionary
 bMap :: Parser Bencode
-bMap = do char 'd'
-          entries <- many dictEntry
-          char 'e'
-          return $ Bdict $ M.fromList entries
+bMap = (Bdict . M.fromList) <$> entries
+  where entries = char 'd' *> many dictEntry <* char 'e'
 
 -- |Parser for a key-value pair
 dictEntry :: Parser (Bencode, Bencode)
-dictEntry = do key <- bString
-               value <- bString <|> bList <|> bInt <|> bMap
-               return (key, value)
+dictEntry = (,) <$> key <*> value
+  where key = bString
+        value = bString <|> bList <|> bInt <|> bMap
+
+parseBencodedByteString :: BS.ByteString -> Either ParseError Bencode 
+parseBencodedByteString = parse bMap "" 
 
 -- |Read a Bencoded dictionary from filename
 readBencodedFile :: String -> IO (Either PE.ParseError Bencode)
