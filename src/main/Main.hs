@@ -15,17 +15,23 @@ import DHTContext
 import DHTMessage
 
 main :: IO ()
-main = do context <- initializeDHTContext getStdGen
-          socket <- newUDPSocket
-          bootstrapAddr <- SockAddrInet 6881 <$> inet_addr "67.215.246.10" -- "router.bittorrent.com"
-          let msgEmitter = sendDHTMessage socket bootstrapAddr
-          let (pingMsg, context') = runState newPing context
-          msgEmitter pingMsg
-          (bsData, sAddr) <- recvFrom socket 4096
+main = do bsData <- getSampleResponse
           BS.putStrLn bsData
-          close socket
           return ()
-          
+
+getSampleResponse :: IO BS.ByteString
+getSampleResponse =
+  do context <- initializeDHTContext getStdGen
+     socket <- newUDPSocket
+     bootstrapAddr <- SockAddrInet 6881 <$> inet_addr "67.215.246.10" -- "router.bittorrent.com"
+     let msgEmitter = sendDHTMessage socket bootstrapAddr
+     let (pingMsg, context') = runState newPing context
+     msgEmitter pingMsg
+     (bsData, sAddr) <- recvFrom socket 4096
+     close socket
+     return bsData
+
+
 createOrReadConfig :: IO (Maybe Handle)
 createOrReadConfig = error "NI" -- do path <- configPath
 
