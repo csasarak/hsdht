@@ -1,6 +1,8 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-|
   Module      : Bencode 
   Description : Implementation of Bencoding for bittorrent as described at http://www.bittorrent.org/beps/bep_0003.html
@@ -13,10 +15,14 @@
 
 module Bencode where
 
+-- CMS: I really have a lot of problems with the code in this file. Will add commentary
+-- and areas for improvement later.
+
 import Text.Parsec
 import Text.Parsec.ByteString
 import qualified Text.Parsec.Error as PE
 import Data.Char
+import Data.String 
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Map as M
 import qualified Control.Monad as Mon
@@ -37,7 +43,7 @@ data Bencode =  -- |Constructor for a Bencoded Integer
               | Blist [Bencode]
                 -- |Constructor for a Bencoded Map (dictionary)
               | Bdict BMap
-              deriving (Eq, Ord)
+             deriving (Eq, Ord)
 
 instance Show Bencode where
     show (Bint i) = "i" ++ show i ++ "e"
@@ -51,9 +57,9 @@ class Bencodable a where
     toBencoding :: a -> Bencode
 
 -- | Inverse of 'Bencodable'
-class Bdecodable a where
+class Bdecodable e a where
     -- | Convert an Bencode datum into an a
-    fromBencoding :: Bencode -> a
+    fromBencoding :: Bencode -> Either e a
 
 instance Bencodable String where
     toBencoding s = Bstr s
@@ -63,6 +69,9 @@ instance Bencodable Integer where
 
 instance Bencodable [Bencode] where
     toBencoding l = Blist l
+
+instance Bencodable BMap where
+  toBencoding bm = Bdict bm
 
 -- |Parser for a Bencoded Integer
 bInt :: Parser Bencode

@@ -27,3 +27,9 @@ statefulRng = do g <- get
                  put rng'
                  return v
 
+-- | Takes a Maybe and an error message. Converts (Just a) into (Right a). 
+--   In case of Nothing, returns (Left e) 
+maybeToEither :: e -> Maybe a -> Either e a
+maybeToEither _ (Just a) = Right a
+maybeToEither e Nothing = Left e
+  
