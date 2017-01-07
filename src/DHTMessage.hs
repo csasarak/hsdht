@@ -4,18 +4,19 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module DHTMessage where
-
 
 import Numeric (showHex)
 import Bencode
 import qualified Data.Map.Lazy as Map
-import Text.Parsec 
+import Text.Parsec.Error
 import Data.ByteString as BS
 import Data.Maybe
 import Control.Applicative
 import Data.Bifunctor
 import Data.String
+import qualified Data.List
 import Node
 import Util
 
@@ -38,7 +39,10 @@ maxTransactionId :: Int
 maxTransactionId = 2^16
 
 -- |MessageType represents a type of DHT message along with any
--- necessary parameters for that type of query
+-- necessary parameters for that type of query.
+-- There's some asymmetry here, but Responses take Bencoded data because
+-- it's not really possible to predict what ever response will have, or what
+-- Responses are returned by foreign nodes. 
 data MessageType =
   -- | A Query message. NodeId is the querying Node's ID
   Query QueryMethod NodeId 
@@ -48,6 +52,12 @@ data MessageType =
   -- | A message indicating an error
   | Error 
 
+instance Show MessageType where
+  show msgT = case msgT of
+    (Query qMeth nId) -> "Query (" ++ (show qMeth) ++ ") " ++ (show nId)
+    (Response bEnc)   -> "Response (" ++ (show bEnc) ++ ")"
+    DHTMessage.Error  -> "Error"
+
 -- |Methods for querying the DHT, along with data specific to that
 -- method. See BEP-0005 for more info.
 data QueryMethod =
@@ -55,6 +65,15 @@ data QueryMethod =
   | FindNode NodeId -- ^ NodeId is the target ID to find
   | GetPeers InfoHash -- ^ The InfoHash to search for
   | AnnouncePeer InfoHash Port Bool -- ^ Probably won't use this too much
+
+instance Show QueryMethod where
+  show qm = case qm of
+    Ping -> "Ping"
+    (FindNode nId) -> "FindNode " ++ (show nId)
+    (GetPeers iHash) -> "GetPeers " ++ (show iHash)
+    (AnnouncePeer iHash port bool) -> "AnnouncePeer " ++
+      (Data.List.intercalate " " [(show iHash), (show port), (show bool)])
+  
 
 -- | Return the key for a particular MessageType
 messageTypeChar :: MessageType -> String
@@ -70,9 +89,15 @@ data DHTMessage =
   messageType :: MessageType -- there might be a better name for this
   }
 
-parseDHTMessage :: BS.ByteString -> Either ParseError DHTMessage
-parseDHTMessage = undefined
-  where bencodedStructure = parse bMap ""
+instance Show DHTMessage where
+  show DHTMessage{..} = "DHTMessage { transactionId: " ++ (show transactionId) ++
+    "\nmessageType: " ++ (show messageType) ++ " }"
+    
+decodeDHTMessage :: BS.ByteString -> Either ErrorString DHTMessage
+decodeDHTMessage bm = case parsedE of
+                          (Left err) -> Left $ show err
+                          (Right bEnc) -> fromBencoding bEnc
+  where parsedE = parseBencodedByteString bm 
 
 -- This is not yet implemented for all message types
 instance Bencodable DHTMessage where
