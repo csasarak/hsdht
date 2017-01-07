@@ -45,6 +45,7 @@ data Bencode =  -- |Constructor for a Bencoded Integer
               | Bdict BMap
              deriving (Eq, Ord)
 
+-- This is a bit messed up because Strings are not necessarily ByteStrings
 instance Show Bencode where
     show (Bint i) = "i" ++ show i ++ "e"
     show (Bstr s) = (show . length) s ++ ":" ++ s

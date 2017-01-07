@@ -112,18 +112,18 @@ instance Bencodable DHTMessage where
 
 -- This is not yet implemented for all message types
 instance Bdecodable ErrorString DHTMessage where
-  fromBencoding (Bdict bMsg) = DHTMessage <$> transactionId <*> (genMsg msgType)
+  fromBencoding (Bdict bMsg) = DHTMessage <$> transactionId <*> (genMsg =<< msgType)
     where unwrapString (Bstr s) = s
           -- These values inspect/query the Becoded value for message pieces
           transactionIdB = maybeToEither "No transaction ID" $ Map.lookup (Bstr "t") bMsg 
-          msgTypeB = maybeToEither "No message type param" $ Map.lookup (Bstr "y") bMsg 
+          msgTypeB = maybeToEither "No message type param"  $ Map.lookup (Bstr "y") bMsg 
           respD = maybeToEither "No Response in dictionary" $ Map.lookup (Bstr "r") bMsg
           -- These are values used to construct the response
           transactionId = unwrapString <$> transactionIdB
           msgType = unwrapString <$> msgTypeB
           genMsg msgType = 
             case msgType of
-              "r" -> Response respD -- id Response $ transactionId 
+              "r" -> Response <$> respD -- id Response $ transactionId 
               "e" -> undefined
               "q" -> undefined
               _   -> (Left "Unknown Message type") :: Either ErrorString MessageType
