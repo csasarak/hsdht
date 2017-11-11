@@ -24,6 +24,11 @@ type DHTHash = Integer
 nodeIdBytes :: Int
 nodeIdBytes = 20
 
+nodeIdBits = 8 * nodeIdBytes
+
+maxIdSpace :: Integer
+maxIdSpace = 2 ^ (fromIntegral nodeIdBits)
+
 -- CMS: Still up in the air about whether nodeStatus should be
 -- another type, or inside the Node.
 -- | Type Representing a Node
@@ -33,7 +38,7 @@ data Node =
          -- | Node status, see 'NodeRating'
          nodeStatus :: NodeRating
        }
-          deriving (Eq)
+          deriving (Eq, Show)
 
 instance Ord Node where 
     a <= b = (nodeId a) <= (nodeId b)
