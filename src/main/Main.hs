@@ -16,10 +16,11 @@ import DHTMessage
 
 main :: IO ()
 main = do bsData <- getSampleResponse
-          BS.putStrLn bsData
-          return ()
+          case bsData of
+            Left e -> Prelude.putStrLn e
+            Right m -> Prelude.putStrLn . show $ m
 
-getSampleResponse :: IO BS.ByteString
+getSampleResponse :: IO (Either String DHTMessage) 
 getSampleResponse =
   do context <- initializeDHTContext getStdGen
      socket <- newUDPSocket
@@ -29,7 +30,7 @@ getSampleResponse =
      msgEmitter pingMsg
      (bsData, sAddr) <- recvFrom socket 4096
      close socket
-     return bsData
+     return $ decodeDHTMessage bsData
 
 
 createOrReadConfig :: IO (Maybe Handle)
