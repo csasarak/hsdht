@@ -2,15 +2,15 @@
 {-# LANGUAGE ViewPatterns #-}
 
 -- Will need to lock this down a bit
-module Node where 
+module HsDHT.Node where 
 
-import Bencode
+import HsDHT.Bencode
 import Control.Applicative
 import Control.Monad.State
-import System.Random
-import Data.Word
 import Data.Bits
-import Util
+import Data.Word
+import System.Random
+import HsDHT.Util
 
 -- Should probably find a way to enforce the following, also, naming?
 -- | NodeIds are 20 bit integer

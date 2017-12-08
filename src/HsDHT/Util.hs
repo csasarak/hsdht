@@ -1,5 +1,5 @@
 -- These are basic utility functions which don't really have a home
-module Util where
+module HsDHT.Util where
 
 import Data.Word
 import Data.Bits

@@ -2,17 +2,17 @@
 -- Author: Christopher Sasarak
 module Main where 
 
-import Data.Maybe
-import System.IO
-import System.Environment
-import System.Random
 import Control.Monad.State
+import Data.ByteString.Char8 as BS
+import Data.Maybe
+import HsDHT.DHTContext
+import HsDHT.DHTMessage
+import HsDHT.DHTSocket
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 import Network.Socket.ByteString
-import Data.ByteString.Char8 as BS
-import DHTSocket
-import DHTContext
-import DHTMessage
+import System.Environment
+import System.IO
+import System.Random
 
 main :: IO ()
 main = do bsData <- getSampleResponse

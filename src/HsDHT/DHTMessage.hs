@@ -5,20 +5,20 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module DHTMessage where
+module HsDHT.DHTMessage where
 
-import Numeric (showHex)
-import Bencode
-import qualified Data.Map.Lazy as Map
-import Text.Parsec.Error
-import Data.ByteString as BS
-import Data.Maybe
-import Control.Applicative
-import Data.Bifunctor
-import Data.String
+import           HsDHT.Bencode
+import           Control.Applicative
+import           Data.Bifunctor
+import           Data.ByteString as BS
 import qualified Data.List
-import Node
-import Util
+import qualified Data.Map.Lazy as Map
+import           Data.Maybe
+import           Data.String
+import           HsDHT.Node
+import           Numeric (showHex)
+import           Text.Parsec.Error
+import           HsDHT.Util
 
 -- | A String describing an error
 type ErrorString = String
@@ -56,7 +56,7 @@ instance Show MessageType where
   show msgT = case msgT of
     (Query qMeth nId) -> "Query (" ++ (show qMeth) ++ ") " ++ (show nId)
     (Response bEnc)   -> "Response (" ++ (show bEnc) ++ ")"
-    DHTMessage.Error  -> "Error"
+    Error  -> "Error"
 
 -- |Methods for querying the DHT, along with data specific to that
 -- method. See BEP-0005 for more info.
@@ -79,7 +79,7 @@ instance Show QueryMethod where
 messageTypeChar :: MessageType -> String
 messageTypeChar (Query _ _)  = "q"
 messageTypeChar (Response _) = "r"
-messageTypeChar DHTMessage.Error     = "e"
+messageTypeChar Error     = "e"
     
 data DHTMessage =
   DHTMessage {

@@ -1,8 +1,8 @@
 
-module RoutingTable.Internal where
+module HsDHT.RoutingTable.Internal where
 
-import Node
-import Util
+import HsDHT.Node 
+import HsDHT.Util (removeElem)
 
 -- | The limits for a particular bucket. The first item in the pair is the min
 --   ID for the bucket, the second is the max id.
@@ -74,7 +74,7 @@ addNodeToBucket n b@(Bucket lim@(l, h) ns s)
               l2 = h1
               l1 = l
               h2 = h
-              smallerBucket = Bucket lim (Util.removeElem Node.isBad ns) (s - 1)
+              smallerBucket = Bucket lim (removeElem isBad ns) (s - 1)
 
 -- | splits a bucket in half evenly and reassign 'Node's, Returning two new buckets.
 splitBucket :: Bucket -> [Bucket]

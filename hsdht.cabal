@@ -15,14 +15,14 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:       Node
-                       , RoutingTable.Internal
-                       , RoutingTable
-                       , Bencode
-                       , DHTSocket
-                       , DHTContext
-                       , DHTMessage
-                       , Util
+  exposed-modules:       HsDHT.Node
+                       , HsDHT.RoutingTable.Internal
+                       , HsDHT.RoutingTable
+                       , HsDHT.Bencode
+                       , HsDHT.DHTSocket
+                       , HsDHT.DHTContext
+                       , HsDHT.DHTMessage
+                       , HsDHT.Util
   build-depends:       base >= 4.7 && < 5
                        , bytestring
                        , random

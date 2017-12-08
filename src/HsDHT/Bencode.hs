@@ -13,7 +13,7 @@
   
  -}
 
-module Bencode where
+module HsDHT.Bencode where
 
 -- CMS: I really have a lot of problems with the code in this file. Will add commentary
 -- and areas for improvement later.

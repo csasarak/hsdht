@@ -2,17 +2,17 @@
 -- This file has types/functions for a context in which
 -- DHT stuff can be done e.g. local node, routing table, RNG etc.
 
-module DHTContext ( DHTContext(..)
-                  , newDHTContext
-                  , initializeDHTContext
-                  , newPing
-                  ) where
+module HsDHT.DHTContext ( DHTContext(..)
+                        , newDHTContext
+                        , initializeDHTContext
+                        , newPing
+                        ) where
 
 import System.Random
 import Control.Monad.State
-import RoutingTable
-import Node
-import DHTMessage
+import HsDHT.RoutingTable
+import HsDHT.Node
+import HsDHT.DHTMessage
 import Numeric
 
 -- Might have to put an rng somewhere in here...

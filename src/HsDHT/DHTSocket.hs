@@ -20,21 +20,21 @@
 -- let sockAddr = SockAddrInet 7900 address
 -- sendTo s "hello" sockAddr 
 
-module DHTSocket ( newUDPSocket
+module HsDHT.DHTSocket ( newUDPSocket
                  , sendDHTMessage
                  ) where
 
+import HsDHT.Bencode
+import Control.Applicative
+import HsDHT.DHTContext
+import HsDHT.DHTMessage
+import Data.ByteString.Char8 as BS
+import Data.Char
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 import Network.Socket.ByteString
-import Data.ByteString.Char8 as BS
-import Control.Applicative
-import Data.Char
+import HsDHT.Node
+import HsDHT.RoutingTable
 import System.Random
-import Node
-import RoutingTable
-import Bencode
-import DHTContext
-import DHTMessage
 
 -- CMS: May eventually need a type to hold and get some data from a context?
 
