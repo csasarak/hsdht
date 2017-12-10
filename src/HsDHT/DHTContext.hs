@@ -63,11 +63,11 @@ getNextTransactionId = do dhtCon <- get
 -- CMS: Should probably rename
 -- | Given a 'QueryMethod', generate a 'State' action producing
 -- 'DHTMessage's given a particular 'DHTContext' when run
-newQueryMaker :: QueryMethod -> State DHTContext DHTMessage
-newQueryMaker qm = do tId <- getNextTransactionId
-                      nId <- gets (nodeId . localNode)
-                      return DHTMessage {transactionId=tId, messageType = Query qm nId }
+newQuery :: QueryMethod -> State DHTContext DHTMessage
+newQuery qm = do tId <- getNextTransactionId
+                 nId <- gets (nodeId . localNode)
+                 return DHTMessage {transactionId=tId, messageType = Query qm nId }
 
 -- | Generate a Ping query message
 newPing :: State DHTContext DHTMessage
-newPing = newQueryMaker Ping
+newPing = newQuery Ping

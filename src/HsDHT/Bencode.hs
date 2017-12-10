@@ -23,7 +23,10 @@ import Text.Parsec.ByteString
 import qualified Text.Parsec.Error as PE
 import Data.Char
 import Data.String 
+import Data.Monoid
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy as LBS
+import Data.ByteString.Builder
 import qualified Data.Map as M
 import qualified Control.Monad as Mon
 import qualified Control.Applicative
@@ -44,6 +47,19 @@ data Bencode =  -- |Constructor for a Bencoded Integer
                 -- |Constructor for a Bencoded Map (dictionary)
               | Bdict BMap
              deriving (Eq, Ord)
+
+bencodeToBuilder :: Bencode -> Builder
+bencodeToBuilder (Bint i)   = char8 'i' <> integerDec i <> char8 'e'
+bencodeToBuilder (Bstr s)   = intDec (BS.length bs) <> char8 ':' <> byteString bs
+  where bs = BS.pack s 
+bencodeToBuilder (Blist bs) = char8 'l' <> foldMap bencodeToBuilder bs <> char8 'e'
+bencodeToBuilder (Bdict bd) = char8 'd' <> body <> char8 'e'
+  where ordered = M.toAscList bd
+        body    = foldMap (\(k, v) -> bencodeToBuilder k <> bencodeToBuilder v) ordered
+
+-- | Convert a bencoded value to a lazy ByteString
+bencodeToByteString :: Bencode -> LBS.ByteString
+bencodeToByteString = toLazyByteString . bencodeToBuilder
 
 -- This is a bit messed up because Strings are not necessarily ByteStrings
 instance Show Bencode where

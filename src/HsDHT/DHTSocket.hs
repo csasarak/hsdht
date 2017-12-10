@@ -29,6 +29,7 @@ import Control.Applicative
 import HsDHT.DHTContext
 import HsDHT.DHTMessage
 import Data.ByteString.Char8 as BS
+import Data.ByteString.Lazy as BL
 import Data.Char
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 import Network.Socket.ByteString
@@ -49,7 +50,7 @@ newUDPSocket = socket AF_INET Datagram defaultProtocol
 -- | Sends a 'DHTMessage' via UDP using a 'Socket' to 'SockAddr'. 
 sendDHTMessage :: Socket -> SockAddr -> DHTMessage -> IO ()
 sendDHTMessage s addr dhtMsg = sendAllTo s dhtBS addr
-  where dhtBS = BS.pack . show . toBencoding $ dhtMsg
+  where dhtBS = BL.toStrict . bencodeToByteString . toBencoding $ dhtMsg
 
 -- CMS: My goal here is to eventually hide the UDP Socket pieces and have message emitter/receiver
 -- pairs and possibly do the validation/queuing of transactions in here. But more importantly,
