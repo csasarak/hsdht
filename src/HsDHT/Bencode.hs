@@ -41,7 +41,7 @@ type BMap = M.Map Bencode Bencode
 data Bencode =  -- |Constructor for a Bencoded Integer
                 Bint Integer
                 -- |Constructor for a Bencoded String
-              | Bstr String
+              | Bstr BS.ByteString
                 -- |Constructor for a list of Bencoded items
               | Blist [Bencode]
                 -- |Constructor for a Bencoded Map (dictionary)
@@ -50,8 +50,7 @@ data Bencode =  -- |Constructor for a Bencoded Integer
 
 bencodeToBuilder :: Bencode -> Builder
 bencodeToBuilder (Bint i)   = char8 'i' <> integerDec i <> char8 'e'
-bencodeToBuilder (Bstr s)   = intDec (BS.length bs) <> char8 ':' <> byteString bs
-  where bs = BS.pack s 
+bencodeToBuilder (Bstr s)   = intDec (BS.length s) <> char8 ':' <> byteString s
 bencodeToBuilder (Blist bs) = char8 'l' <> foldMap bencodeToBuilder bs <> char8 'e'
 bencodeToBuilder (Bdict bd) = char8 'd' <> body <> char8 'e'
   where ordered = M.toAscList bd
@@ -64,7 +63,8 @@ bencodeToByteString = toLazyByteString . bencodeToBuilder
 -- This is a bit messed up because Strings are not necessarily ByteStrings
 instance Show Bencode where
     show (Bint i) = "i" ++ show i ++ "e"
-    show (Bstr s) = (show . length) s ++ ":" ++ s
+    show (Bstr s) = (show . length) s' ++ ":" ++ s'
+      where s'    = BS.unpack s
     show (Blist bs) = 'l':concatMap show bs ++ "e"
     show (Bdict bm) = (foldl (\a (k, v) -> a ++ show k ++ show v) "d" . M.toAscList $ bm) ++ "e"
 
@@ -79,7 +79,7 @@ class Bdecodable e a where
     fromBencoding :: Bencode -> Either e a
 
 instance Bencodable String where
-    toBencoding s = Bstr s
+    toBencoding s = Bstr . BS.pack $ s
 
 instance Bencodable Integer where
     toBencoding i = Bint i
@@ -109,7 +109,7 @@ bInt = Bint <$> (char 'i' *> validNum <* char 'e' )
 bString :: Parser Bencode
 bString = do ss <- (many1 digit <* char ':')
              let size = read ss
-             Mon.liftM Bstr $ count size anyChar
+             Bstr <$> BS.pack <$> count size anyChar
              
 -- |Parser for a Bencoded list
 bList :: Parser Bencode

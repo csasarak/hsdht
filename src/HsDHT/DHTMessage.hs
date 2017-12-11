@@ -7,23 +7,23 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module HsDHT.DHTMessage where
 
-import           HsDHT.Bencode
 import           Control.Applicative
 import           Data.Bifunctor
-import           Data.ByteString as BS
+import           Data.ByteString.Char8 as BS
 import qualified Data.List
 import qualified Data.Map.Lazy as Map
 import           Data.Maybe
 import           Data.String
+import           HsDHT.Bencode
 import           HsDHT.Node
+import           HsDHT.Util
 import           Numeric (showHex)
 import           Text.Parsec.Error
-import           HsDHT.Util
 
 -- | A String describing an error
 type ErrorString = String
 -- | A short (generally two-chars) hexadecimal string transaction id
-type TransactionId = String
+type TransactionId = BS.ByteString
 -- | An Integral form of the transaction id
 type TransactionIdI = Int -- Integer form of TransactionId
 -- CMS: Think about turning these hashes into ByteStrings
@@ -76,10 +76,10 @@ instance Show QueryMethod where
   
 
 -- | Return the key for a particular MessageType
-messageTypeChar :: MessageType -> String
-messageTypeChar (Query _ _)  = "q"
-messageTypeChar (Response _) = "r"
-messageTypeChar Error     = "e"
+messageTypeCode :: MessageType -> BS.ByteString
+messageTypeCode (Query _ _)  = "q"
+messageTypeCode (Response _) = "r"
+messageTypeCode Error     = "e"
     
 data DHTMessage =
   DHTMessage {
@@ -99,13 +99,17 @@ decodeDHTMessage bm = case parsedE of
                           (Right bEnc) -> fromBencoding bEnc
   where parsedE = parseBencodedByteString bm 
 
+-- | Convenience function for converting integral representations to hex ByteStrings
+hexByteString :: (Integral a, Show a) => a -> BS.ByteString
+hexByteString n = BS.pack $ showHex n $ ""
+
 -- This is not yet implemented for all message types
 instance Bencodable DHTMessage where
   toBencoding msg@DHTMessage{..} =
-    let msgBase = [(Bstr "t", Bstr transactionId)]
-        queryBase = (Bstr "y", Bstr $ messageTypeChar messageType):msgBase
+    let msgBase = [(Bstr "t", Bstr $ transactionId)]
+        queryBase = (Bstr "y", Bstr $ messageTypeCode messageType):msgBase
         pingQuery = (Bstr "q", Bstr "ping"):queryBase
-        queryArgDict nodeId = Bdict $ Map.fromList [(Bstr "id", Bstr $ showHex nodeId "")]
+        queryArgDict nodeId = Bdict $ Map.fromList [(Bstr "id", Bstr $ hexByteString nodeId)]
     in
       case messageType of
         (Query Ping nodeId) -> Bdict $ Map.fromList $ (Bstr "a", queryArgDict nodeId):pingQuery

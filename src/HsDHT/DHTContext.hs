@@ -8,12 +8,13 @@ module HsDHT.DHTContext ( DHTContext(..)
                         , newPing
                         ) where
 
-import System.Random
 import Control.Monad.State
-import HsDHT.RoutingTable
-import HsDHT.Node
+import Data.ByteString.Char8 as BS
 import HsDHT.DHTMessage
+import HsDHT.Node
+import HsDHT.RoutingTable
 import Numeric
+import System.Random
 
 -- Might have to put an rng somewhere in here...
 data DHTContext =
@@ -53,12 +54,12 @@ initializeDHTContext = fmap newDHTContext
 
 -- | Given a DHTContext, get the next TransactionId and return as a String, updating
 -- the transaction counter as well. 
-getNextTransactionId :: State DHTContext String
+getNextTransactionId :: State DHTContext BS.ByteString
 getNextTransactionId = do dhtCon <- get 
                           let tId = nextTid dhtCon
                           let newId = (tId + 1) `mod` maxTransactionId
                           put $ dhtCon { nextTid = newId }
-                          return $ showHex newId "" 
+                          return $ BS.pack $ showHex tId "" 
 
 -- CMS: Should probably rename
 -- | Given a 'QueryMethod', generate a 'State' action producing
