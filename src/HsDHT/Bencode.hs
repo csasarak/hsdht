@@ -22,14 +22,10 @@ import Text.Parsec
 import Text.Parsec.ByteString
 import qualified Text.Parsec.Error as PE
 import Data.Char
-import Data.String 
-import Data.Monoid
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder
 import qualified Data.Map as M
-import qualified Control.Monad as Mon
-import qualified Control.Applicative
 
 
 -- BUG: This type doesn't yet reject improper Bencoded values, e.g.
@@ -37,7 +33,7 @@ import qualified Control.Applicative
 -- | A map from Bencode data to Bencode data
 type BMap = M.Map Bencode Bencode
 
--- | Type representing a Bencoded value
+-- | Abstract Bencoded Value
 data Bencode =  -- |Constructor for a Bencoded Integer
                 Bint Integer
                 -- |Constructor for a Bencoded String

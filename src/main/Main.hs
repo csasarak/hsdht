@@ -2,7 +2,7 @@
 -- Author: Christopher Sasarak
 module Main where 
 
-import Control.Monad.State
+import Control.Monad.Trans.State
 import Data.ByteString.Char8 as BS
 import Data.Maybe
 import HsDHT.DHTContext

@@ -8,7 +8,7 @@ module HsDHT.DHTContext ( DHTContext(..)
                         , newPing
                         ) where
 
-import Control.Monad.State
+import Control.Monad.Trans.State
 import Data.ByteString.Char8 as BS
 import HsDHT.DHTMessage
 import HsDHT.Node

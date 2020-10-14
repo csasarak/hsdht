@@ -4,7 +4,7 @@ module HsDHT.Util where
 import Data.Word
 import Data.Bits
 import System.Random
-import Control.Monad.State
+import Control.Monad.Trans.State
 
 -- | Removes the first instance of a list for which the supplied predicate
 -- returns true

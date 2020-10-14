@@ -5,10 +5,9 @@
 module HsDHT.Node where 
 
 import HsDHT.Bencode
-import Control.Applicative
-import Control.Monad.State
+import Control.Monad
+import Control.Monad.Trans.State
 import Data.Bits
-import Data.Word
 import System.Random
 import HsDHT.Util
 
@@ -24,6 +23,7 @@ type DHTHash = Integer
 nodeIdBytes :: Int
 nodeIdBytes = 20
 
+nodeIdBits :: Int
 nodeIdBits = 8 * nodeIdBytes
 
 maxIdSpace :: Integer
