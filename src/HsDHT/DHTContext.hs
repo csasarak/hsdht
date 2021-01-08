@@ -25,7 +25,7 @@ data DHTContext =
     , routingTable :: RoutingTable 
       -- | The 'TransactionIdI' which will be assigned for the next transaction.
     , nextTid :: TransactionIdI
-      -- | An a 'RandomGen' which can be used for generating data
+      -- | A 'RandomGen' which can be used for generating data
     , contextRng :: g
     }
 
