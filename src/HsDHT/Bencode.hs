@@ -24,14 +24,13 @@ import qualified Text.Parsec.Error as PE
 import Data.Char
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.ByteString.Builder
+import Data.ByteString.Builder as BB
 import qualified Data.Map as M
-
 
 -- BUG: This type doesn't yet reject improper Bencoded values, e.g.
 -- BMap should only accept Bstrs as key values.
 -- | A map from Bencode data to Bencode data
-type BMap = M.Map Bencode Bencode
+type BMap = M.Map BS.ByteString Bencode
 
 -- | Abstract Bencoded Value
 data Bencode =  -- |Constructor for a Bencoded Integer
@@ -45,12 +44,12 @@ data Bencode =  -- |Constructor for a Bencoded Integer
              deriving (Eq, Ord)
 
 bencodeToBuilder :: Bencode -> Builder
-bencodeToBuilder (Bint i)   = char8 'i' <> integerDec i <> char8 'e'
-bencodeToBuilder (Bstr s)   = intDec (BS.length s) <> char8 ':' <> byteString s
-bencodeToBuilder (Blist bs) = char8 'l' <> foldMap bencodeToBuilder bs <> char8 'e'
-bencodeToBuilder (Bdict bd) = char8 'd' <> body <> char8 'e'
+bencodeToBuilder (Bint i)   = BB.char8 'i' <> integerDec i <> char8 'e'
+bencodeToBuilder (Bstr s)   = intDec (BS.length s) <> BB.char8 ':' <> BB.byteString s
+bencodeToBuilder (Blist bs) = BB.char8 'l' <> foldMap bencodeToBuilder bs <> char8 'e'
+bencodeToBuilder (Bdict bd) = BB.char8 'd' <> body <> char8 'e'
   where ordered = M.toAscList bd
-        body    = foldMap (\(k, v) -> bencodeToBuilder k <> bencodeToBuilder v) ordered
+        body    = foldMap (\(k, v) -> BB.byteString k <> bencodeToBuilder v) ordered
 
 -- | Convert a bencoded value to a lazy ByteString
 bencodeToByteString :: Bencode -> LBS.ByteString
@@ -102,10 +101,13 @@ bInt = Bint <$> (char 'i' *> validNum <* char 'e' )
                                 _ -> many digit >>= \xs -> return $ read (neg:d:xs)
        
 -- |Parser for a Bencoded String
+parseStr :: Parse BS.ByteString
+parseStr = do ss <- (many1 digit <* char ':')
+              let size = read ss
+              BS.pack <$> count size anyChar
+
 bString :: Parser Bencode
-bString = do ss <- (many1 digit <* char ':')
-             let size = read ss
-             Bstr <$> BS.pack <$> count size anyChar
+bString = Bstr <$> parseStr
              
 -- |Parser for a Bencoded list
 bList :: Parser Bencode
@@ -119,10 +121,9 @@ bMap = (Bdict . M.fromList) <$> entries
   where entries = char 'd' *> many dictEntry <* char 'e'
 
 -- |Parser for a key-value pair
-dictEntry :: Parser (Bencode, Bencode)
-dictEntry = (,) <$> key <*> value
-  where key = bString
-        value = bString <|> bList <|> bInt <|> bMap
+dictEntry :: Parser (BS.ByteString, Bencode)
+dictEntry = (,) <$> parseStr <*> value
+  where value = bString <|> bList <|> bInt <|> bMap
 
 parseBencodedByteString :: BS.ByteString -> Either ParseError Bencode 
 parseBencodedByteString = parse bMap "" 
