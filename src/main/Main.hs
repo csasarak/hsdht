@@ -23,13 +23,13 @@ main = do bsData <- getSampleResponse
 getSampleResponse :: IO (Either String DHTMessage) 
 getSampleResponse =
   do context <- initializeDHTContext getStdGen
-     socket <- newUDPSocket
-     bootstrapAddr <- SockAddrInet 6881 <$> inet_addr "67.215.246.10" -- "router.bittorrent.com"
-     let msgEmitter = sendDHTMessage socket bootstrapAddr
+     sock <- newUDPSocket
+     let bootstrapAddr = SockAddrInet 6881 $ tupleToHostAddress (67, 215, 246, 10) -- "router.bittorrent.com"
+     let msgEmitter = sendDHTMessage sock bootstrapAddr
      let (pingMsg, context') = runState newPing context
      msgEmitter pingMsg
-     (bsData, sAddr) <- recvFrom socket 4096
-     close socket
+     (bsData, sAddr) <- recvFrom sock 4096
+     close sock
      return $ decodeDHTMessage bsData
 
 

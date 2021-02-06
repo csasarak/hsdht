@@ -25,17 +25,10 @@ module HsDHT.DHTSocket ( newUDPSocket
                  ) where
 
 import HsDHT.Bencode
-import Control.Applicative
-import HsDHT.DHTContext
 import HsDHT.DHTMessage
-import Data.ByteString.Char8 as BS
 import Data.ByteString.Lazy as BL
-import Data.Char
-import Network.Socket hiding (send, sendTo, recv, recvFrom)
+import Network.Socket
 import Network.Socket.ByteString
-import HsDHT.Node
-import HsDHT.RoutingTable
-import System.Random
 
 -- CMS: May eventually need a type to hold and get some data from a context?
 

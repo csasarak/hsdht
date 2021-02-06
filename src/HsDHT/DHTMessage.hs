@@ -7,18 +7,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module HsDHT.DHTMessage where
 
-import           Control.Applicative
-import           Data.Bifunctor
 import           Data.ByteString.Char8 as BS
 import qualified Data.List
 import qualified Data.Map.Lazy as Map
-import           Data.Maybe
-import           Data.String
 import           HsDHT.Bencode
 import           HsDHT.Node
 import           HsDHT.Util
 import           Numeric (showHex)
-import           Text.Parsec.Error
 
 -- | A String describing an error
 type ErrorString = String
@@ -36,7 +31,7 @@ type ImpliedPort = Bool
 -- | The number of allowed outstanding transactions at any time. Higher
 -- numbered transactions will wrap back around to 0
 maxTransactionId :: Int
-maxTransactionId = 2^16
+maxTransactionId = 2^(16 :: Integer)
 
 -- |MessageType represents a type of DHT message along with any
 -- necessary parameters for that type of query.
@@ -54,8 +49,8 @@ data MessageType =
 
 instance Show MessageType where
   show msgT = case msgT of
-    (Query qMeth nId) -> "Query (" ++ (show qMeth) ++ ") " ++ (show nId)
-    (Response bEnc)   -> "Response (" ++ (show bEnc) ++ ")"
+    (Query qMeth nId) -> "Query (" ++ show qMeth ++ ") " ++ (show nId)
+    (Response bEnc)   -> "Response (" ++ show bEnc ++ ")"
     Error  -> "Error"
 
 -- |Methods for querying the DHT, along with data specific to that
@@ -69,10 +64,10 @@ data QueryMethod =
 instance Show QueryMethod where
   show qm = case qm of
     Ping -> "Ping"
-    (FindNode nId) -> "FindNode " ++ (show nId)
-    (GetPeers iHash) -> "GetPeers " ++ (show iHash)
+    (FindNode nId) -> "FindNode " ++ show nId
+    (GetPeers iHash) -> "GetPeers " ++ show iHash
     (AnnouncePeer iHash port bool) -> "AnnouncePeer " ++
-      (Data.List.intercalate " " [(show iHash), (show port), (show bool)])
+      Data.List.intercalate " " [show iHash, show port, show bool]
   
 
 -- | Return the key for a particular MessageType
@@ -90,8 +85,8 @@ data DHTMessage =
   }
 
 instance Show DHTMessage where
-  show DHTMessage{..} = "DHTMessage { transactionId: " ++ (show transactionId) ++
-    "\nmessageType: " ++ (show messageType) ++ " }"
+  show DHTMessage{..} = "DHTMessage { transactionId: " ++ show transactionId ++
+    "\nmessageType: " ++ show messageType ++ " }"
     
 decodeDHTMessage :: BS.ByteString -> Either ErrorString DHTMessage
 decodeDHTMessage bm = case parsedE of
@@ -101,35 +96,35 @@ decodeDHTMessage bm = case parsedE of
 
 -- | Convenience function for converting integral representations to hex ByteStrings
 hexByteString :: (Integral a, Show a) => a -> BS.ByteString
-hexByteString n = BS.pack $ showHex n $ ""
+hexByteString n = BS.pack $ showHex n ""
 
 -- This is not yet implemented for all message types
 instance Bencodable DHTMessage where
-  toBencoding msg@DHTMessage{..} =
-    let msgBase = [(Bstr "t", Bstr $ transactionId)]
-        queryBase = (Bstr "y", Bstr $ messageTypeCode messageType):msgBase
-        pingQuery = (Bstr "q", Bstr "ping"):queryBase
-        queryArgDict nodeId = Bdict $ Map.fromList [(Bstr "id", Bstr $ hexByteString nodeId)]
+  toBencoding DHTMessage{..} =
+    let msgBase = [("t", Bstr $ transactionId)]
+        queryBase = ("y", Bstr $ messageTypeCode messageType):msgBase
+        pingQuery = ("q", Bstr "ping"):queryBase
+        queryArgDict nodeId = Bdict $ Map.fromList [("id", Bstr $ hexByteString nodeId)]
     in
       case messageType of
-        (Query Ping nodeId) -> Bdict $ Map.fromList $ (Bstr "a", queryArgDict nodeId):pingQuery
+        (Query Ping nodeId) -> Bdict $ Map.fromList $ ("a", queryArgDict nodeId):pingQuery
 
 -- This is not yet implemented for all message types
 instance Bdecodable ErrorString DHTMessage where
   fromBencoding (Bdict bMsg) = DHTMessage <$> transactionId <*> (genMsg =<< msgType)
     where unwrapString (Bstr s) = s
           -- These values inspect/query the Becoded value for message pieces
-          transactionIdB = maybeToEither "No transaction ID" $ Map.lookup (Bstr "t") bMsg 
-          msgTypeB = maybeToEither "No message type param"  $ Map.lookup (Bstr "y") bMsg 
-          respD = maybeToEither "No Response in dictionary" $ Map.lookup (Bstr "r") bMsg
+          transactionIdB = maybeToEither "No transaction ID" $ Map.lookup "t" bMsg 
+          msgTypeB = maybeToEither "No message type param"  $ Map.lookup "y" bMsg 
+          respD = maybeToEither "No Response in dictionary" $ Map.lookup "r" bMsg
           -- These are values used to construct the response
           transactionId = unwrapString <$> transactionIdB
           msgType = unwrapString <$> msgTypeB
-          genMsg msgType = 
-            case msgType of
+          genMsg typeChar = 
+            case typeChar of
               "r" -> Response <$> respD -- id Response $ transactionId 
               "e" -> undefined
               "q" -> undefined
-              _   -> (Left "Unknown Message type") :: Either ErrorString MessageType
+              _   -> Left "Unknown Message type" :: Either ErrorString MessageType
           
   fromBencoding _ = Left "Only Bdict's can be decoded to a DHTMessage"

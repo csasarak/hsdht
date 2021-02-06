@@ -101,8 +101,8 @@ bInt = Bint <$> (char 'i' *> validNum <* char 'e' )
                                 _ -> many digit >>= \xs -> return $ read (neg:d:xs)
        
 -- |Parser for a Bencoded String
-parseStr :: Parse BS.ByteString
-parseStr = do ss <- (many1 digit <* char ':')
+parseStr :: Parser BS.ByteString
+parseStr = do ss <- many1 digit <* char ':'
               let size = read ss
               BS.pack <$> count size anyChar
 
@@ -117,7 +117,7 @@ bList = Blist <$> p
 
 -- |Parser for a Bencoded dictionary
 bMap :: Parser Bencode
-bMap = (Bdict . M.fromList) <$> entries
+bMap = Bdict . M.fromList <$> entries
   where entries = char 'd' *> many dictEntry <* char 'e'
 
 -- |Parser for a key-value pair
