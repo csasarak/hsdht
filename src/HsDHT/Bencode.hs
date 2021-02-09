@@ -126,8 +126,8 @@ bMap :: Parser Bencode
 bMap = Bdict . M.fromList <$> entries
   where entries = char 'd' *> many dictEntry <* char 'e'
 
-parseBencodedByteString :: BS.ByteString -> Either ParseError Bencode 
-parseBencodedByteString = parse bMap ""
+parseBencodedDict :: BS.ByteString -> Either ParseError Bencode 
+parseBencodedDict = parse bMap ""
 
 -- |Read a Bencoded dictionary from filename
 readBencodedFile :: String -> IO (Either PE.ParseError Bencode)

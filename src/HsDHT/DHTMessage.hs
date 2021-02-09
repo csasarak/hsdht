@@ -93,7 +93,7 @@ decodeDHTMessage :: BS.ByteString -> Either ErrorString DHTMessage
 decodeDHTMessage bm = case parsedE of
                           (Left err) -> Left $ show err
                           (Right bEnc) -> fromBencoding bEnc
-  where parsedE = parseBencodedByteString bm 
+  where parsedE = parseBencodedDict bm 
 
 -- | Convenience function for converting integral representations to hex ByteStrings
 hexByteString :: (Integral a, Show a) => a -> BS.ByteString
