@@ -7,20 +7,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module HsDHT.DHTMessage where
 
-import           Data.ByteString.Char8 as BS
-import qualified Data.List
+import qualified Data.ByteString.Lazy.Char8 as BSChar
+import           Data.ByteString.Lazy as BS
 import qualified Data.Map.Lazy as Map
 import           HsDHT.Bencode
 import           HsDHT.Node
 import           HsDHT.Util
 import           Numeric (showHex)
+import Data.Word (Word16)
 
 -- | A String describing an error
 type ErrorString = String
 -- | A short (generally two-chars) hexadecimal string transaction id
 type TransactionId = BS.ByteString
 -- | An Integral form of the transaction id
-type TransactionIdI = Int -- Integer form of TransactionId
+type TransactionIdI = Word16 -- Integer form of TransactionId
 -- CMS: Think about turning these hashes into ByteStrings
 -- | 160-bit InfoHash
 type InfoHash = Integer
@@ -30,8 +31,8 @@ type ImpliedPort = Bool
 
 -- | The number of allowed outstanding transactions at any time. Higher
 -- numbered transactions will wrap back around to 0
-maxTransactionId :: Int
-maxTransactionId = 2^(16 :: Integer)
+maxTransactionId :: Word16
+maxTransactionId = maxBound
 
 -- |MessageType represents a type of DHT message along with any
 -- necessary parameters for that type of query.
@@ -49,7 +50,7 @@ data MessageType =
 
 instance Show MessageType where
   show msgT = case msgT of
-    (Query qMeth nId) -> "Query (" ++ show qMeth ++ ") " ++ (show nId)
+    (Query qMeth nId) -> "Query (" ++ show qMeth ++ ") " ++ show nId
     (Response bEnc)   -> "Response (" ++ show bEnc ++ ")"
     Error  -> "Error"
 
@@ -67,7 +68,7 @@ instance Show QueryMethod where
     (FindNode nId) -> "FindNode " ++ show nId
     (GetPeers iHash) -> "GetPeers " ++ show iHash
     (AnnouncePeer iHash port bool) -> "AnnouncePeer " ++
-      Data.List.intercalate " " [show iHash, show port, show bool]
+      unwords [show iHash, show port, show bool]
   
 
 -- | Return the key for a particular MessageType
@@ -96,12 +97,12 @@ decodeDHTMessage bm = case parsedE of
 
 -- | Convenience function for converting integral representations to hex ByteStrings
 hexByteString :: (Integral a, Show a) => a -> BS.ByteString
-hexByteString n = BS.pack $ showHex n ""
+hexByteString n = BSChar.pack $ showHex n ""
 
 -- This is not yet implemented for all message types
 instance Bencodable DHTMessage where
   toBencoding DHTMessage{..} =
-    let msgBase = [("t", Bstr $ transactionId)]
+    let msgBase = [("t", Bstr transactionId)]
         queryBase = ("y", Bstr $ messageTypeCode messageType):msgBase
         pingQuery = ("q", Bstr "ping"):queryBase
         queryArgDict nodeId = Bdict $ Map.fromList [("id", Bstr $ hexByteString nodeId)]

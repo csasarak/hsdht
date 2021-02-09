@@ -9,12 +9,12 @@ module HsDHT.DHTContext ( DHTContext(..)
                         ) where
 
 import Control.Monad.Trans.State
-import Data.ByteString.Char8 as BS
+import Data.ByteString.Lazy as BS
 import HsDHT.DHTMessage
 import HsDHT.Node
 import HsDHT.RoutingTable
-import Numeric
 import System.Random
+import Data.Bits
 
 -- Might have to put an rng somewhere in here...
 data DHTContext =
@@ -28,6 +28,8 @@ data DHTContext =
       -- | A 'RandomGen' which can be used for generating data
     , contextRng :: g
     }
+
+-- TODO: revisit and rewrite the bottom with new random package, less state
 
 -- | Will generate a new DHTContext with a fresh node id
 newDHTContext :: RandomGen g => g -> DHTContext
@@ -44,11 +46,21 @@ getRandomFromDHTContext = do dhtC <- get
                                                                     , nextTid = nextTid
                                                                     , contextRng = rng'}
                                                       return v
-                             
+
 -- | Given an action which produces and instance of RandomGen, initialize a
 -- DHTContext from the RandomGen
 initializeDHTContext :: (Functor f, RandomGen g) => f g -> f DHTContext
 initializeDHTContext = fmap newDHTContext
+
+-- | Change a number into a ByteString of hex characters
+toHex :: (Integral a, Bits a) => a -> BS.ByteString
+toHex = BS.unfoldr go
+  where hexOrd v
+          | v < 10 = v + 17
+          | otherwise = v + 23
+        go 0 = Nothing
+        go v = Just (hexOrd . fromIntegral $ (v .&. 0x1111)
+                    , v `shift` (-4))
 
 -- Computations with a DHTContext maintaining State
 
@@ -59,7 +71,7 @@ getNextTransactionId = do dhtCon <- get
                           let tId = nextTid dhtCon
                           let newId = (tId + 1) `mod` maxTransactionId
                           put $ dhtCon { nextTid = newId }
-                          return $ BS.pack $ showHex tId "" 
+                          return $ toHex tId
 
 -- CMS: Should probably rename
 -- | Given a 'QueryMethod', generate a 'State' action producing

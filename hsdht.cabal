@@ -13,6 +13,10 @@ category:            Web
 build-type:          Simple
 -- extra-source-files:
 
+
+common exe-ghc-opts
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  
 library
   hs-source-dirs:      src
   exposed-modules:       HsDHT.Node
@@ -23,9 +27,10 @@ library
                        , HsDHT.DHTContext
                        , HsDHT.DHTMessage
                        , HsDHT.Util
+  default-extensions:  OverloadedStrings
   ghc-options:         -Wall
   build-depends:       base >= 4.7 && < 5
-                       , bytestring ^>= 0.10.0.0
+                       , bytestring ^>= 0.11.0.0
                        , random ^>= 1.2.0
                        , parsec ^>= 3.1.14
                        , containers ^>= 0.6.4.1
@@ -35,31 +40,33 @@ library
   default-language:    Haskell2010
 
 executable hsdht-exe
+  import:              exe-ghc-opts
   hs-source-dirs:      src/main
   main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:       base
                      , hsdht
                      , random ^>= 1.2.0
-                     , bytestring ^>= 0.10.0.0
+                     , bytestring ^>= 0.11.0.0
                      , network ^>= 3.1.2
                      , transformers ^>= 0.5.6.2
+  default-extensions:  OverloadedStrings                     
   default-language:    Haskell2010
 
 test-suite hsdht-test
+  import:              exe-ghc-opts           
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       HsDHT.BencodeSpec
   build-depends:       base
                      , hsdht
-                     , bytestring ^>= 0.10.0.0
-                     , binary ^>= 0.8.8.0
+                     , bytestring ^>= 0.11.0.0
                      , hedgehog ^>= 1.0.4
                      , hspec ^>= 2.7.4
                      , hspec-hedgehog ^>= 0.0.1.2
                      , parsec ^>= 3.1.14
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
+  default-extensions:  OverloadedStrings
+
   default-language:    Haskell2010
 
 source-repository head
