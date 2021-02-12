@@ -65,6 +65,7 @@ test-suite hsdht-test
                      , hspec ^>= 2.7.4
                      , hspec-hedgehog ^>= 0.0.1.2
                      , parsec ^>= 3.1.14
+                     , containers ^>= 0.6.4.1
   default-extensions:  OverloadedStrings
 
   default-language:    Haskell2010

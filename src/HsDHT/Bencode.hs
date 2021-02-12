@@ -44,13 +44,18 @@ data Bencode =  -- |Constructor for a Bencoded Integer
               | Bdict BMap
              deriving (Eq, Ord)
 
+strToBstrBuilder :: BS.ByteString -> BB.Builder
+strToBstrBuilder s = BB.int64Dec (BS.length s) <> BB.char8 ':' <> BB.lazyByteString s
+
 bencodeToBuilder :: Bencode -> BB.Builder
 bencodeToBuilder (Bint i)   = BB.char8 'i' <> BB.integerDec i <> BB.char8 'e'
-bencodeToBuilder (Bstr s)   = BB.int64Dec (BS.length s) <> BB.char8 ':' <> BB.lazyByteString s
+bencodeToBuilder (Bstr s)   = strToBstrBuilder s
 bencodeToBuilder (Blist bs) = BB.char8 'l' <> foldMap bencodeToBuilder bs <> BB.char8 'e'
 bencodeToBuilder (Bdict bd) = BB.char8 'd' <> body <> BB.char8 'e'
   where ordered = M.toAscList bd
-        body    = foldMap (\(k, v) -> BB.lazyByteStringHex k <> bencodeToBuilder v) ordered
+        body    = foldMap (\(k, v) -> strToBstrBuilder k
+                                      <> bencodeToBuilder v)
+                  ordered
 
 -- | Convert a bencoded value to a lazy ByteString
 bencodeToByteString :: Bencode -> BS.ByteString 
@@ -113,22 +118,22 @@ bString = Bstr <$> parseStr
 -- |Parser for a Bencoded list
 bList :: Parser Bencode
 bList = Blist <$> p
-  where list_items = many (bInt <|> bString <|> bList <|> bMap)
+  where list_items = many (bInt <|> bString <|> bList <|> bDict)
         p = char 'l' *> list_items <* char 'e'
 
 -- |Parser for a key-value pair
 dictEntry :: Parser (BS.ByteString, Bencode)
 dictEntry = (,) <$> parseStr <*> value
-  where value = bString <|> bList <|> bInt <|> bMap
+  where value = bString <|> bList <|> bInt <|> bDict
 
 -- |Parser for a Bencoded dictionary
-bMap :: Parser Bencode
-bMap = Bdict . M.fromList <$> entries
+bDict :: Parser Bencode
+bDict = Bdict . M.fromList <$> entries
   where entries = char 'd' *> many dictEntry <* char 'e'
 
 parseBencodedDict :: BS.ByteString -> Either ParseError Bencode 
-parseBencodedDict = parse bMap ""
+parseBencodedDict = parse bDict ""
 
 -- |Read a Bencoded dictionary from filename
 readBencodedFile :: String -> IO (Either PE.ParseError Bencode)
-readBencodedFile = parseFromFile bMap
+readBencodedFile = parseFromFile bDict

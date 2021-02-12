@@ -11,11 +11,21 @@ import  HsDHT.Bencode as Ben
 import Data.Either (isLeft)
 import Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Builder as BB
+import qualified Data.Map as Map
 
 bencodeTests :: SpecWith ()
 bencodeTests = parallel $ sequence_ [bIntTests
                                     , bStrTests
-                                    , bListTests]
+                                    , bListTests
+                                    , bDictTests]
+
+randomAny :: MonadGen m => m Bencode
+randomAny =
+  Gen.frequency
+    [ (100, randomBint)
+    , (75, randomBstr)
+    , (5, randomBlist)
+    , (5, randomBdict)]
 
 randomBint :: (MonadGen m) => m Bencode
 randomBint = do
@@ -23,13 +33,20 @@ randomBint = do
     return $ Bint i
 
 randomBstr :: (MonadGen m) => m Bencode
-randomBstr = Bstr . BS.fromStrict <$> Gen.bytes (Range.linear 20 250)
+randomBstr = Bstr . BS.fromStrict <$> Gen.bytes (Range.linear 20 200)
 
 randomBlist :: (MonadGen m) => m Bencode
 randomBlist = fmap Blist
-              . Gen.list (Range.linear 0 100)
-              . Gen.choice $ [randomBstr
-                             , randomBint]
+              . Gen.list (Range.linear 0 20)
+              $ randomAny
+
+randomBdict :: MonadGen m => m Bencode
+randomBdict =
+  let dictEntries =
+        (,)
+          <$> (BS.fromStrict <$> Gen.bytes (Range.linear 5 50))
+          <*> randomAny
+   in Bdict . Map.fromList <$> Gen.list (Range.linear 1 25) dictEntries
 
 bIntTests :: SpecWith ()
 bIntTests =
@@ -81,4 +98,21 @@ bListTests =
                 Left e  ->  error $ "Couldn't parse " <> show ls <> " because of " <> show e
                 Right v -> v
     ls === ls'
-    
+
+bDictTests :: SpecWith ()
+bDictTests =
+  describe "bDict parsing" $ do
+  it "Parses a dict" $ do
+    let parsedMap = Ben.Bdict (Map.fromList [ ("key1", Bint 2)
+                                            , ("key2", Blist [Bint 1
+                                                           , Bstr "hello"])
+                                            , ("key3", Bdict $ Map.fromList [("a", Bstr "b")])])
+    case parse Ben.bDict "" "d4:key1i2e4:key2li1e5:helloe4:key3d1:a1:bee" of
+      Left e -> error $ "parse error" <> show e
+      Right v -> v `shouldBe` parsedMap
+  it "Parses arbitrary dicts" $ hedgehog $ do
+    d <- forAll randomBdict
+    case Ben.parseBencodedDict . bencodeToByteString $ d of
+      Left e -> error $ "Couldn't parse " <> show d <> " because of " <> show e
+      Right d' -> d === d'
+
