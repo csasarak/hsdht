@@ -4,11 +4,10 @@ module Main where
 
 import Control.Monad.Trans.State
 import Data.ByteString.Char8 as BS
-import Data.Maybe
 import HsDHT.DHTContext
 import HsDHT.DHTMessage
 import HsDHT.DHTSocket
-import Network.Socket hiding (send, sendTo, recv, recvFrom)
+import Network.Socket
 import Network.Socket.ByteString
 import System.Environment
 import System.IO
@@ -18,7 +17,7 @@ main :: IO ()
 main = do bsData <- getSampleResponse
           case bsData of
             Left e -> Prelude.putStrLn e
-            Right m -> Prelude.putStrLn . show $ m
+            Right m -> Prelude.print m
 
 getSampleResponse :: IO (Either String DHTMessage) 
 getSampleResponse =
@@ -30,7 +29,7 @@ getSampleResponse =
      msgEmitter pingMsg
      (bsData, sAddr) <- recvFrom sock 4096
      close sock
-     return $ decodeDHTMessage bsData
+     return . decodeDHTMessage . BS.fromStrict $ bsData
 
 
 createOrReadConfig :: IO (Maybe Handle)
