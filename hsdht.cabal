@@ -67,6 +67,7 @@ test-suite hsdht-test
                      , hspec-hedgehog ^>= 0.0.1.2
                      , parsec ^>= 3.1.14
                      , containers ^>= 0.6.4.1
+  build-tool-depends: hspec-discover:hspec-discover == 2.*
   default-extensions:  OverloadedStrings
 
   default-language:    Haskell2010

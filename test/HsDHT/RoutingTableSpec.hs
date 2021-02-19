@@ -10,8 +10,8 @@ import HsDHT.RoutingTable
 import HsDHT.RoutingTable.Internal
 import HsDHT.Node
 
-routingTableSpecs :: SpecWith ()
-routingTableSpecs =
+spec :: SpecWith ()
+spec =
   parallel $ sequence_ [addNodeToBucketSpec
                        , nodeBelongsSpec
                        , splitBucketSpec]
@@ -64,10 +64,10 @@ addNodeToBucketSpec =
     let RoutingTable{getBuckets=bs} = addNode newRoutingTable (Node 1 Good)
     (length . foldMap getNodes $ bs) `shouldBe` 1
 
---  it "Doesn't add a node to an incorrect bucket" 
+  it "Doesn't add a node to an incorrect bucket" $ do 
+    let empty = emptyBucket (0, 10)
+    addNodeToBucket (newNode 15) empty `shouldBe` [empty]
   -- it "Real size matches Bucket size parameter" $ hedgehog $ do
   --   nodes <- forAll $ Gen.list (Range.linear 0 50) randomNode
   --   let RoutingTable{getBuckets=bs} = foldr (flip addNode) newRoutingTable nodes
   --   assert $ foldr (\b acc -> acc && length (getNodes b) == bucketSize b) True bs
-     
-       

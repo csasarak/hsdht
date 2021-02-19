@@ -13,11 +13,11 @@ import Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Builder as BB
 import qualified Data.Map as Map
 
-bencodeTests :: SpecWith ()
-bencodeTests = parallel $ sequence_ [bIntTests
-                                    , bStrTests
-                                    , bListTests
-                                    , bDictTests]
+spec :: SpecWith ()
+spec = parallel $ sequence_ [bIntTests
+                            , bStrTests
+                            , bListTests
+                            , bDictTests]
 
 randomAny :: MonadGen m => m Bencode
 randomAny =
