@@ -9,7 +9,7 @@ import Control.Monad.Trans.State
 -- | Removes the first instance of a list for which the supplied predicate
 -- returns true
 removeElem :: (a -> Bool) -> [a] -> [a]
-removeElem p xs = a ++ as
+removeElem p xs = a <> as
                 where (a, _:as) = span p xs
 
 -- | Turn a list of Word8s into an Integer. Word8 bits will appear

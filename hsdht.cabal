@@ -58,6 +58,7 @@ test-suite hsdht-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       HsDHT.BencodeSpec
+                     , HsDHT.RoutingTableSpec
   build-depends:       base
                      , hsdht
                      , bytestring ^>= 0.11.0.0

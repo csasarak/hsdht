@@ -26,9 +26,6 @@ nodeIdBytes = 20
 nodeIdBits :: Int
 nodeIdBits = 8 * nodeIdBytes
 
-maxIdSpace :: Integer
-maxIdSpace = 2 ^ (fromIntegral nodeIdBits)
-
 -- CMS: Still up in the air about whether nodeStatus should be
 -- another type, or inside the Node.
 -- | Type Representing a Node
@@ -41,10 +38,14 @@ data Node =
           deriving (Eq, Show)
 
 instance Ord Node where 
-    a <= b = (nodeId a) <= (nodeId b)
+    a <= b = nodeId a <= nodeId b
 
 instance Bencodable Node where
     toBencoding (nodeId -> i) = Bint i
+
+-- | Generate a new good node
+newNode :: NodeId -> Node
+newNode nId = Node nId Good
 
 -- Maybe add data for when we've contacted a Node once with no response?
 -- | The rating of a node
@@ -61,17 +62,17 @@ data NodeRating =
 -- | Report if a Node is Good
 isGood :: Node -> Bool
 isGood (nodeStatus -> Good) = True
-isGood otherwise = False
+isGood _ = False
 
 -- | Report if a Node is Bad
 isBad :: Node -> Bool
 isBad (nodeStatus -> Bad) = True
-isBad otherwise = False
+isBad _ = False
 
 -- | Report if a Node is Questionable
 isQuestionable :: Node -> Bool
 isQuestionable (nodeStatus -> Questionable) = True
-isQuestionable otherwise = False
+isQuestionable _ = False
 
 -- |Generates a node with a new NodeId given a random number generator,
 -- also returns the advanced rng.
@@ -82,7 +83,7 @@ genNode gen = (Node id Good, gen')
                     
 -- | Base hash compare function, simply XORs two Integers/NodeIds together
 compareHashes :: Integer -> Integer -> Integer
-compareHashes i1 i2 = i1 `xor` i2
+compareHashes = xor
 
 -- | Distance between two nodes
 nodeDistance :: Node -> Node -> DHTHash
@@ -90,9 +91,5 @@ nodeDistance n1 n2 = compareHashes (nodeId n1) (nodeId n2)
 
 -- | Distance between a node and an arbitrary hash
 nodeHashCmp :: Node -> DHTHash -> DHTHash
-nodeHashCmp n h = compareHashes (nodeId n) h
-
--- | Generates a new node using the System RNG
-newNode :: IO Node
-newNode = fst . genNode <$> getStdGen
+nodeHashCmp n = compareHashes (nodeId n)
 
