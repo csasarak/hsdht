@@ -33,3 +33,7 @@ maybeToEither :: e -> Maybe a -> Either e a
 maybeToEither _ (Just a) = Right a
 maybeToEither e Nothing = Left e
   
+-- | Check that two NodeHashes are between each other
+betweenLimits :: Integer -> Integer -> Integer -> Bool
+betweenLimits l1 l2 nodeHash = l1 <= nodeHash && nodeHash < l2 
+

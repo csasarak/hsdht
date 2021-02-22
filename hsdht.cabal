@@ -20,8 +20,9 @@ common exe-ghc-opts
 library
   hs-source-dirs:      src
   exposed-modules:       HsDHT.Node
-                       , HsDHT.RoutingTable.Internal
                        , HsDHT.RoutingTable
+                       , HsDHT.Bucket
+                       , HsDHT.Bucket.Internal
                        , HsDHT.Bencode
                        , HsDHT.DHTSocket
                        , HsDHT.DHTContext
@@ -59,6 +60,7 @@ test-suite hsdht-test
   main-is:             Spec.hs
   other-modules:       HsDHT.BencodeSpec
                      , HsDHT.RoutingTableSpec
+                     , HsDHT.BucketSpec
   build-depends:       base
                      , hsdht
                      , bytestring ^>= 0.11.0.0
