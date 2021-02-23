@@ -1,4 +1,4 @@
-module HsDHT.BucketSpec where
+module HsDHT.BucketSpec (spec) where
 
 import qualified Data.Set as Set
 import Test.Hspec
@@ -23,11 +23,17 @@ randomNode (l1, l2) =
   <$> Gen.integral (Range.constant l1 l2)
   <*> Gen.constant Good
 
--- | Return a bucket where n nodes are in lim
+-- The following can generate Buckets that aren't normally valid
+-- | Return a bucket where n unique nodes are in lim
 randomBucket :: MonadGen m => BucketLimit -> Int -> m Bucket
 randomBucket lim n =
-  do nodes <- Gen.list (Range.singleton n) (randomNode lim)
+  do nodes <- Set.toList <$> Gen.set (Range.singleton n) (randomNode lim)
      return $ Bucket lim nodes (length nodes)
+
+bucketSizeMatchesNodes :: Bucket -> Bool
+bucketSizeMatchesNodes Bucket {getSize=s
+                              , getNodes=ns}
+  = length ns == s
 
 nodeBelongsSpec :: SpecWith ()
 nodeBelongsSpec =
@@ -53,6 +59,13 @@ splitBucketSpec =
     (Set.size . Set.fromList) nodes === length nodes
     annotate "All nodes are within their bucket limits"
     assert $ and (buckets >>= \b -> nodeBelongs b <$> getNodes b)
+    let [lowLim, hiLim] = getLimits <$> buckets
+    annotate "Lower bucket's limits are as expected"
+    lowLim === (fst maxIdSpace, snd maxIdSpace `quot` 2)
+    annotate "Higher bucket's limits are as expected"
+    hiLim === (snd maxIdSpace `quot` 2, snd maxIdSpace)
+    annotate "Bucket size matches the number of nodes"
+    assert $ all bucketSizeMatchesNodes buckets
 
 addNodeToBucketSpec :: SpecWith ()
 addNodeToBucketSpec =
