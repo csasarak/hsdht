@@ -9,6 +9,7 @@ import qualified Hedgehog.Range as Range
 import HsDHT.Bucket
 import HsDHT.Bucket.Internal
 import HsDHT.Node
+import Data.Bifunctor (second)
 
 spec :: SpecWith ()
 spec =
@@ -20,7 +21,7 @@ spec =
 randomNode :: MonadGen m => BucketLimit -> m Node
 randomNode (l1, l2) =
   Node
-  <$> Gen.integral (Range.constant l1 l2)
+  <$> Gen.integral (Range.constant l1 (l2 - 1)) -- lims are [low, high)
   <*> Gen.constant Good
 
 -- The following can generate Buckets that aren't normally valid
@@ -45,7 +46,17 @@ nodeBelongsSpec =
     newNode 10 `shouldNotSatisfy` nodeBelongs bucket
   it "Node outside lower limit doesn't belong" $ do
     newNode 0 `shouldNotSatisfy` nodeBelongs bucket
- 
+
+bucketChecks :: [Bucket] -> PropertyT IO ()
+bucketChecks buckets = do
+  annotate "All nodes are unique"
+  let nodes = buckets >>= getNodes
+  (Set.size . Set.fromList) nodes === length nodes
+  annotate "All nodes are within their bucket limits"
+  assert $ and (buckets >>= \b -> nodeBelongs b <$> getNodes b)
+  annotate "Bucket size matches the number of nodes"
+  assert $ all bucketSizeMatchesNodes buckets
+
 splitBucketSpec :: SpecWith ()
 splitBucketSpec =
   describe "Splitting buckets works" $ do
@@ -54,18 +65,13 @@ splitBucketSpec =
     let buckets = splitBucket fullBucket
     annotate "There are two buckets"
     length buckets === 2
-    annotate "All nodes are unique"
-    let nodes = buckets >>= getNodes
-    (Set.size . Set.fromList) nodes === length nodes
-    annotate "All nodes are within their bucket limits"
-    assert $ and (buckets >>= \b -> nodeBelongs b <$> getNodes b)
+    bucketChecks buckets
     let [lowLim, hiLim] = getLimits <$> buckets
     annotate "Lower bucket's limits are as expected"
     lowLim === (fst maxIdSpace, snd maxIdSpace `quot` 2)
     annotate "Higher bucket's limits are as expected"
     hiLim === (snd maxIdSpace `quot` 2, snd maxIdSpace)
-    annotate "Bucket size matches the number of nodes"
-    assert $ all bucketSizeMatchesNodes buckets
+
 
 addNodeToBucketSpec :: SpecWith ()
 addNodeToBucketSpec =
@@ -77,8 +83,14 @@ addNodeToBucketSpec =
     let node = newNode 10
     let [b]  = addNodeToBucket node defaultEmptyBucket
     node `shouldSatisfy`  (`elem` getNodes b)
-    
-  -- it "Real size matches Bucket size parameter" $ hedgehog $ do
-    -- nodes <- forAll $ Gen.list (Range.linear 0 50) (randomNode maxIdSpace)
-    -- let bs = foldl' (\bs n -> bs >>= addNodeToBucket n) [emptyBucket maxIdSpace] nodes
-    -- assert $ all (\b -> length (bucketNodes b) == bucketSize b) bs
+  it "Buckets split recursively if necessary" $ hedgehog $ do
+    let halfSpace = second (`div` 2) maxIdSpace
+    bucket  <- forAll $ randomBucket halfSpace maxBucketNodes
+    newBuckets <- forAll $ addNodeToBucket
+                           <$> randomNode maxIdSpace
+                           <*> pure (bucket{getLimits = maxIdSpace})
+    assert $ length newBuckets >= 2
+    bucketChecks newBuckets
+  --   nodes <- forAll $ Gen.list (Range.linear 0 50) (randomNode maxIdSpace)
+  --   let bs = foldl' (\bs n -> bs >>= addNodeToBucket n) [emptyBucket maxIdSpace] nodes
+  --   assert $ all (\b -> length (bucketNodes b) == bucketSize b) bs
