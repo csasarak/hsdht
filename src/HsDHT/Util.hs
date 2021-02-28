@@ -6,16 +6,10 @@ import Data.Bits
 import System.Random
 import Control.Monad.Trans.State
 
--- | Removes the first instance of a list for which the supplied predicate
--- returns true
-removeElem :: (a -> Bool) -> [a] -> [a]
-removeElem p xs = a <> as
-                where (a, _:as) = span p xs
-
 -- | Turn a list of Word8s into an Integer. Word8 bits will appear
 -- in the Integer in the same order as they appear in the list.
 wordListToInteger :: [Word8] -> Integer
-wordListToInteger = foldl (\acc n -> (acc `shiftL` 8) .|. (toInteger n)) 0
+wordListToInteger = foldl (\acc n -> (acc `shiftL` 8) .|. toInteger n) 0
 
 -- | a 'State' action which retrieves a 'Random' value from a RandomGen stored as the State.
 -- The Random value is the result of the action. This is mainly useful for generating many random
