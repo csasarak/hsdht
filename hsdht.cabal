@@ -42,7 +42,7 @@ library
 
 executable hsdht-exe
   import:              exe-ghc-opts
-  hs-source-dirs:      src/main
+  hs-source-dirs:      app
   main-is:             Main.hs
   build-depends:       base
                      , hsdht
